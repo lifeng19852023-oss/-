@@ -1,48 +1,44 @@
 const db = require('../db/mysql');
 
-function getElderlyList(callback) {
-  db.query(
-    'SELECT * FROM elderly',
-    (err, results) => {
-      callback(err, results);
-    }
+// 查询老人列表
+async function getElderlyList() {
+  const [rows] = await db.query(
+    'SELECT * FROM elderly ORDER BY id DESC'
   );
+
+  return rows;
 }
-
-function createElderly(data, callback) {
-    const { name, gender, age } = data;
-  
-    db.query(
+// 新增老人
+async function createElderly(name, gender, age) {
+    const [result] = await db.query(
       'INSERT INTO elderly (name, gender, age) VALUES (?, ?, ?)',
-      [name, gender, age],
-      (err, result) => {
-        callback(err, result);
-      }
+      [name, gender, age]
     );
+  
+    return result;
   }
 
-  function updateElderly(id, data, callback) {
-    const { name, gender, age } = data;
-  
-    db.query(
+// 修改老人信息
+async function updateElderly(id, name, gender, age) {
+    // UPDATE（更新数据库中的数据）
+    const [result] = await db.query(
       'UPDATE elderly SET name = ?, gender = ?, age = ? WHERE id = ?',
-      [name, gender, age, id],
-      (err, result) => {
-        callback(err, result);
-      }
+      [name, gender, age, id]
     );
-  }
   
-  function deleteElderly(id, callback) {
-    db.query(
-      'DELETE FROM elderly WHERE id = ?',
-      [id],
-      (err, result) => {
-        callback(err, result);
-      }
-    );
+    return result;
   }
 
+  // 删除老人
+async function deleteElderly(id) {
+    // DELETE（删除数据库中的数据）
+    const [result] = await db.query(
+      'DELETE FROM elderly WHERE id = ?',
+      [id]
+    );
+  
+    return result;
+  }
 module.exports = {
   getElderlyList,
   createElderly,

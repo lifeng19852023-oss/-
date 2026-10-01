@@ -1,199 +1,134 @@
 const elderlyService = require('../services/elderlyService');
 
-function getElderlyList(req, res) {
-  elderlyService.getElderlyList((err, results) => {
+// 获取老人列表
+async function getElderlyList(req, res) {
+  try {
+    const data = await elderlyService.getElderlyList();
 
-    if (err) {
-      res.writeHead(500, {
-        'Content-Type': 'application/json; charset=utf-8'
-      });
-
-      res.end(JSON.stringify({
-        code: 500,
-        message: '查询老人数据失败'
-      }));
-
-      return;
-    }
-
-    res.writeHead(200, {
-      'Content-Type': 'application/json; charset=utf-8'
-    });
-
-    res.end(JSON.stringify({
+    res.json({
       code: 200,
-      data: results
-    }));
-  });
+      message: '查询成功',
+      data: data
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      code: 500,
+      message: '查询失败'
+    });
+  }
 }
-
-function createElderly(req, res) {
-    let body = '';
+// 新增老人
+async function createElderly(req, res) {
+    try {
+      // req.body（获取前端发送过来的数据）
+      const { name, gender, age } = req.body;
   
-    req.on('data', chunk => {
-      body += chunk;
-    });
+      // 调用 Service（业务服务）
+      const result = await elderlyService.createElderly(
+        name,
+        gender,
+        age
+      );
   
-    req.on('end', () => {
-      let data;
-  
-      try {
-        data = JSON.parse(body);
-      } catch (error) {
-        res.writeHead(400, {
-          'Content-Type': 'application/json; charset=utf-8'
-        });
-  
-        res.end(JSON.stringify({
-          code: 400,
-          message: '请求数据不是有效的 JSON'
-        }));
-  
-        return;
-      }
-  
-      elderlyService.createElderly(data, (err, result) => {
-        if (err) {
-          res.writeHead(500, {
-            'Content-Type': 'application/json; charset=utf-8'
-          });
-  
-          res.end(JSON.stringify({
-            code: 500,
-            message: '新增老人失败'
-          }));
-  
-          return;
+      // 返回新增成功
+      res.json({
+        code: 200,
+        message: '新增成功',
+        data: {
+          id: result.insertId,
+          name,
+          gender,
+          age
         }
-  
-        res.writeHead(201, {
-          'Content-Type': 'application/json; charset=utf-8'
-        });
-  
-        res.end(JSON.stringify({
-          code: 201,
-          message: '新增老人成功',
-          data: {
-            id: result.insertId,
-            ...data
-          }
-        }));
       });
-    });
+  
+    } catch (error) {
+      // console.error（输出错误信息）
+      console.error(error);
+  
+      res.status(500).json({
+        code: 500,
+        message: '新增失败'
+      });
+    }
   }
 
-
-  function updateElderly(req, res) {
-    const parts = req.url.split('/');
-    const id = Number(parts[3]);
+  // 修改老人信息
+async function updateElderly(req, res) {
+    try {
+      // req.params（获取 URL 参数）
+      const { id } = req.params;
   
-    let body = '';
+      // req.body（获取请求正文中的数据）
+      const { name, gender, age } = req.body;
   
-    req.on('data', chunk => {
-      body += chunk;
-    });
+      // 调用 Service（业务服务）
+      const result = await elderlyService.updateElderly(
+        id,
+        name,
+        gender,
+        age
+      );
   
-    req.on('end', () => {
-      let data;
-  
-      try {
-        data = JSON.parse(body);
-      } catch (error) {
-        res.writeHead(400, {
-          'Content-Type': 'application/json; charset=utf-8'
-        });
-  
-        res.end(JSON.stringify({
-          code: 400,
-          message: '请求数据不是有效的 JSON'
-        }));
-  
-        return;
-      }
-  
-      elderlyService.updateElderly(id, data, (err, result) => {
-        if (err) {
-          res.writeHead(500, {
-            'Content-Type': 'application/json; charset=utf-8'
-          });
-  
-          res.end(JSON.stringify({
-            code: 500,
-            message: '修改老人失败'
-          }));
-  
-          return;
-        }
-  
-        if (result.affectedRows === 0) {
-          res.writeHead(404, {
-            'Content-Type': 'application/json; charset=utf-8'
-          });
-  
-          res.end(JSON.stringify({
-            code: 404,
-            message: '老人不存在'
-          }));
-  
-          return;
-        }
-  
-        res.writeHead(200, {
-          'Content-Type': 'application/json; charset=utf-8'
-        });
-  
-        res.end(JSON.stringify({
-          code: 200,
-          message: '修改老人成功',
-          data: {
-            id,
-            ...data
-          }
-        }));
-      });
-    });
-  }
-  function deleteElderly(req, res) {
-    const parts = req.url.split('/');
-    const id = Number(parts[3]);
-  
-    elderlyService.deleteElderly(id, (err, result) => {
-      if (err) {
-        res.writeHead(500, {
-          'Content-Type': 'application/json; charset=utf-8'
-        });
-  
-        res.end(JSON.stringify({
-          code: 500,
-          message: '删除老人失败'
-        }));
-  
-        return;
-      }
-  
+      // affectedRows（实际被修改的行数）
       if (result.affectedRows === 0) {
-        res.writeHead(404, {
-          'Content-Type': 'application/json; charset=utf-8'
-        });
-  
-        res.end(JSON.stringify({
+        return res.status(404).json({
           code: 404,
           message: '老人不存在'
-        }));
-  
-        return;
+        });
       }
   
-      res.writeHead(200, {
-        'Content-Type': 'application/json; charset=utf-8'
+      res.json({
+        code: 200,
+        message: '修改成功'
       });
   
-      res.end(JSON.stringify({
-        code: 200,
-        message: '删除老人成功'
-      }));
-    });
+    } catch (error) {
+      // console.error（输出错误）
+      console.error(error);
+  
+      res.status(500).json({
+        code: 500,
+        message: '修改失败'
+      });
+    }
   }
+// 删除老人
+async function deleteElderly(req, res) {
+    try {
+      // req.params（获取 URL 参数）
+      const { id } = req.params;
+  
+      // 调用 Service（业务服务）
+      const result = await elderlyService.deleteElderly(id);
+  
+      // affectedRows（实际删除的行数）
+      if (result.affectedRows === 0) {
+        return res.status(404).json({
+          code: 404,
+          message: '老人不存在'
+        });
+      }
+  
+      res.json({
+        code: 200,
+        message: '删除成功'
+      });
+  
+    } catch (error) {
+      // console.error（输出错误信息）
+      console.error(error);
+  
+      res.status(500).json({
+        code: 500,
+        message: '删除失败'
+      });
+    }
+  }
+
 module.exports = {
   getElderlyList,
   createElderly,
