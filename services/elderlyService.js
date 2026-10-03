@@ -141,13 +141,29 @@ async function getElderlyStatistics() {
       FROM elderly
       WHERE age >= 80
     `);
+
+    // 年龄分布
+    const [ageGroupRows] = await db.query(`
+    SELECT
+      CASE
+        WHEN age >= 60 AND age < 70 THEN '60-69岁'
+        WHEN age >= 70 AND age < 80 THEN '70-79岁'
+        WHEN age >= 80 AND age < 90 THEN '80-89岁'
+        WHEN age >= 90 THEN '90岁以上'
+      END AS ageGroup,
+      COUNT(*) AS total
+    FROM elderly
+    GROUP BY ageGroup
+    ORDER BY ageGroup
+  `);
   
     return {
       total: totalRows[0].total,
       male: maleRows[0].total,
       female: femaleRows[0].total,
       averageAge: averageAgeRows[0].averageAge,
-      over80: over80Rows[0].total
+      over80: over80Rows[0].total,
+      ageGroup: ageGroupRows
     };
   }
 
